@@ -1,15 +1,15 @@
 
 test:
     driver: postgres
-    open: host=postgresql-db user=help dbname=database sslmode=disable password=abcd1234
+    open: host=postgresql-db user=test dbname=database sslmode=disable password=abcd1234
 
 development:
     driver: postgres
-    open: host=postgresql-db user=help dbname=database sslmode=disable password=abcd1234
+    open: host=postgresql-db user=test dbname=database sslmode=disable password=abcd1234
     
 production:
     driver: postgres
-    open: host=postgresql-db user=help dbname=database sslmode=verify-full password=abcd1234
+    open: host=postgresql-db user=test dbname=database sslmode=verify-full password=abcd1234
 
 customimport:
     driver: customdriver

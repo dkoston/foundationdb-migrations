@@ -1,15 +1,15 @@
-FROM gcr.io/help-1272/golang:1.6
+FROM gcr.io/cryptowalk-price-alerts/golang:1.9
 
 # Install goose
 
-WORKDIR /go/src/git.help.com/goose
-RUN     mkdir -p /go/src/git.help.com/goose
-COPY    Makefile /go/src/git.help.com/goose/Makefile
-COPY    db  /go/src/git.help.com/goose/db
-COPY    cmd /go/src/git.help.com/goose/cmd
-COPY    lib /go/src/git.help.com/goose/lib
-COPY    test /go/src/git.help.com/goose/test
-RUN     cd /go/src/git.help.com/goose \
+WORKDIR /go/src/github.com/cryptowalkio/goose
+RUN     mkdir -p /go/src/github.com/cryptowalkio/goose
+COPY    Makefile /go/src/github.com/cryptowalkio/goose/Makefile
+COPY    db  /go/src/github.com/cryptowalkio/goose/db
+COPY    cmd /go/src/github.com/cryptowalkio/goose/cmd
+COPY    lib /go/src/github.com/cryptowalkio/goose/lib
+COPY    test /go/src/github.com/cryptowalkio/goose/test
+RUN     cd /go/src/github.com/cryptowalkio/goose \
     &&  chmod +x test/migration_test.bash \
     &&  make install
 
@@ -17,36 +17,21 @@ RUN     cd /go/src/git.help.com/goose \
 # Install psql for verifying migrations worked
 RUN apt-get update \
     && apt-get install -y --no-install-recommends --force-yes postgresql-client \
-    && echo 'postgresql-db:5432:database:help:abcd1234' > ~/.pgpass \
+    && echo 'postgresql-db:5432:database:test:abcd1234' > ~/.pgpass \
     && chmod 0600 ~/.pgpass
 
 # Install node for testing node migrations
 
-ENV NODE_VERSION 6.10.2
+ENV NODE_VERSION 8.9.4
 
 RUN set -ex \
-  && for key in \
-    9554F04D7259F04124DE6B476D5A82AC7E37093B \
-    94AE36675C464D64BAFA68DD7434390BDBE9B9C5 \
-    0034A06D9D9B0064CE8ADF6BF1747F4AD2306D93 \
-    FD3A5288F042B6850C66B31F09FE44734EB7990E \
-    71DCFD284A79C3B38668286BC97EC7A07EDE3FC1 \
-    DD8F2338BAE7501E3DD5AC78C273792F7D83545D \
-    B9AE9905FFD7803F25714661B63B535A4C206CA9 \
-    C4F0DFFF4E8C1A8236409D08E73BC641CC11F4C8 \
-  ; do \
-    gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
-  done \
   && curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.xz" \
-  && curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt.asc" \
-  && gpg --batch --decrypt --output SHASUMS256.txt SHASUMS256.txt.asc \
-  && grep " node-v$NODE_VERSION-linux-x64.tar.xz\$" SHASUMS256.txt | sha256sum -c - \
   && tar -xJf "node-v$NODE_VERSION-linux-x64.tar.xz" -C /usr/local --strip-components=1 \
-  && rm "node-v$NODE_VERSION-linux-x64.tar.xz" SHASUMS256.txt.asc SHASUMS256.txt \
-  && curl -SL "https://storage.googleapis.com/helpdotcom-binaries/goose" -o /usr/local/bin/goose \
-  && chmod +x /usr/local/bin/goose \
+  && rm "node-v$NODE_VERSION-linux-x64.tar.xz" \
+  && npm i -g npm@latest \
   && wget -O /usr/local/bin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.0/dumb-init_1.2.0_amd64 \
   && chmod +x /usr/local/bin/dumb-init
+
 
 RUN node -v
 RUN npm -v

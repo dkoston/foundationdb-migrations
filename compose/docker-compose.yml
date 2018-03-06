@@ -1,27 +1,17 @@
-# This file should include every backend service at Help.com
-# NOTE: it is not useful when developing against backend services
-# unless you comment out the service you are working on
-# Rather, it is intended for the frontend to have a working copy of the
-# latest version of the backend system so they can do integration work
-# and run the whole app
 version: '2'
 services:
   goose:
     build:
       context: ../
-    command: bash -c "sleep 15 && goose up && /go/src/git.help.com/goose/test/migration_test.bash"
+    command: bash -c "sleep 15 && goose up && /go/src/github.com/cryptowalkio/goose/test/migration_test.bash"
     depends_on:
       - postgresql-db
 
   postgresql-db:
-    image: gcr.io/help-1272/docker-postgresql:0-latest
+    image: postgres:9.6
     ports:
       - "5432:5432"
     environment:
-      PG_MODE: "master"
-      PG_MASTER_USER: "master"
-      PG_MASTER_PASSWORD: "master"
-      PG_USER: "help"
-      PG_PASSWORD: "abcd1234"
-      PG_ROOT_PASSWORD: "rootpassword"
-      PG_DATABASES: "database"
+      POSTGRES_USER: "test"
+      POSTGRES_PASSWORD: "abcd1234"
+      POSTGRES_DB: "database"

@@ -10,7 +10,7 @@ echo "1..3"
 # Test that sql transaction migration worked
 
 echo "SELECT id FROM sql;" > test.sql
-ROW=$(psql -h postgresql-db -U help database < test.sql 2>&1)
+ROW=$(psql -h postgresql-db -U test database < test.sql 2>&1)
 if [[ $ROW == *"(1 row)"* ]]; then
   echo "ok 1 - sql with transactions"
 else
@@ -22,7 +22,7 @@ fi
 # Tests that sql no transaction migration worked
 
 echo "SELECT id FROM post;" > test2.sql
-ROW=$(psql -h postgresql-db -U help database < test.sql 2>&1)
+ROW=$(psql -h postgresql-db -U test database < test.sql 2>&1)
 if [[ $ROW == *"(1 row)"* ]]; then
   echo "ok 2 - sql no transactions"
 else

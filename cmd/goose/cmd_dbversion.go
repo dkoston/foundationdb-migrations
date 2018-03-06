@@ -1,7 +1,7 @@
 package main
 
 import (
-	"git.help.com/goose/lib/goose"
+	"github.com/cryptowalkio/goose/lib/goose"
 	"fmt"
 	"log"
 )
