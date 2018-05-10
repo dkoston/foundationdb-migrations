@@ -2,4 +2,5 @@
 cmd/goose/goose*
 *.swp
 *.test
+*.iml
 .idea/

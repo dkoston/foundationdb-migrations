@@ -22,7 +22,7 @@ RUN apt-get update \
 
 # Install node for testing node migrations
 
-ENV NODE_VERSION 8.9.4
+ENV NODE_VERSION 8.11.1
 
 RUN set -ex \
   && curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.xz" \
