@@ -95,7 +95,7 @@ func runGoMigration(conf *DBConf, path string, number int64, direction bool) err
 // this gets linked against the substituted versions of the user-supplied
 // scripts in order to execute a migration via `go run`
 //
-var goMigrationDriverTemplate = template.Must(template.New("goose.go-driver").Parse(`
+var goMigrationDriverTemplate = template.Must(template.New("fdbm.go-driver").Parse(`
 package main
 
 import (

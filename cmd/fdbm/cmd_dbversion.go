@@ -33,8 +33,8 @@ func dbVersionRun(cmd *Command, args ...string) {
 	}
 
 	if current == 000 {
-		log.Fatal("no migrations applied. Use 'goose up' to apply migration files")
+		log.Fatal("no migrations applied. Use 'fdbm up' to apply migration files")
 	}
 
-	fmt.Printf("goose: dbversion %v\n", current)
+	fmt.Printf("fdbm: dbversion %v\n", current)
 }

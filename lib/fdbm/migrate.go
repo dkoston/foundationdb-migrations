@@ -420,7 +420,7 @@ func FinalizeMigration(t fdb.Transactor, migrationsSS subspace.Subspace, date st
 }
 
 
-var goMigrationTemplate = template.Must(template.New("goose.go-migration").Parse(`
+var goMigrationTemplate = template.Must(template.New("fdbm.go-migration").Parse(`
 package main
 
 import (
