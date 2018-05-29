@@ -93,7 +93,7 @@ func RunMigrationsOnDb(conf *DBConf, migrationsDir string, targetNumber int64, d
 	}
 
 	if len(migrations) == 0 {
-		fmt.Printf("%s: no migrations to run. current version: %d\n", NAME, current)
+		fmt.Printf("%s: no migrations to run. current version: %d\n", NAME, current.Number)
 		return nil
 	}
 
