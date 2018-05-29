@@ -193,3 +193,23 @@ func Down_20130106222315(t fdb.Transactor) error {
 Thank you!
 
 * Dave Koston (dkoston)
+
+# Previous Contributors
+
+Thanks to those who built goose (which fdbm is based heavily on)
+
+* Josh Bleecher Snyder (josharian)
+* Abigail Walthall (ghthor)
+* Daniel Heath (danielrheath)
+* Chris Baynes (chris_baynes)
+* Michael Gerow (gerow)
+* Vytautas Šaltenis (rtfb)
+* James Cooper (coopernurse)
+* Gyepi Sam (gyepisam)
+* Matt Sherman (clipperhouse)
+* runner_mei
+* John Luebs (jkl1337)
+* Luke Hutton (lukehutton)
+* Kevin Gorjan (kevingorjan)
+* Brendan Fosberry (Fozz)
+* Nate Guerin (gusennan)
