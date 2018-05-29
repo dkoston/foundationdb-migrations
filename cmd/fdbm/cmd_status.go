@@ -63,5 +63,5 @@ func printMigrationStatus(dbMigrations map[int64]fdbm.Migration, fileMigration *
         date = dbMigration.Date
     }
 
-	fmt.Printf("    %s        %-24s %v\n", status, date, fileName)
+	fmt.Printf("    %-14s %-25s %v\n", status, date, fileName)
 }

@@ -123,13 +123,11 @@ For convience, you can rollback and re-run the last migration with:
 
 `fdmb status`
 
-    $ fdmb status
-    $ fdmb: status
-    $   Applied At                  Migration
-    $   =======================================
-    $   Tue May  22 11:25:03 2018 -- 001_import_data.go
-    $   Tue May  22 11:25:03 2018 -- 002_add_more_data.go
-    $   Pending                   -- 003_alter_the_data_from_one.go
+    $ fdbm: migration status
+    $    Status         Date                      File
+    $   =========================================================================
+    $   Success        20180529155230           db/migrations/20130106222315_and_again.go
+    $   Rolled back    20180529160754           db/migrations/20180529152851_test2.go
 
 
 You will see the timestamp of when applied migrations were run against the db.
