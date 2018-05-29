@@ -1,269 +1,197 @@
-# goose
+# foundationdb-migrations
 
-goose is a database migration tool.
+## Foreword
 
-You can manage your database's evolution by creating incremental SQL or Go scripts.
+Not every wants to use migrations on key/value stores. For those who do, this
+database migration tool handles migrations for FoundationDB
 
-# Install
+### Examples of Why
 
-    clone this repo into $GOPATH/github.com/cryptowalkio/goose
+For example, you have a service which relies on some information to be in the 
+database such as a list of exchanges to pull prices from and the symbols that 
+are listed on those exchanges. 
+
+- In this case, we add a migration to add those exchanges and symbols
+
+Then, you support more exchanges and symbols:
+
+- We add another migration to add those, and maybe disable one who's API is 
+broken.
+
+We want this to programatically happen and want the migrations to be launched
+before new code that needs them is running.
+
+On Kubernetes, we run something like [dumb-init](https://github.com/Yelp/dumb-init)
+as our container command where first we run the migrations and then the API
+server. With a healthcheck on the API server container, the load balancer won't
+flip traffic over to the new containers until they are all live (migrations run)
+.
+
+## License
+
+See [MIT-License.md](./MIT-License.md)
+
+## Install
+
+    clone this repo into $GOPATH/github.com/dkoston/foundationdb-migrations
     run: `make install`
 
-This will install the `goose` binary to your `$GOPATH/bin` directory.
+## Configuration and command line options (all commands under Usage)
 
-You can also build goose into your own applications by importing `bitbucket.org/liamstask/goose/lib/goose`. Documentation is available at [godoc.org](http://godoc.org/bitbucket.org/liamstask/goose/lib/goose).
+### fdb.cluster
 
-NOTE: the API is still new, and may undergo some changes.
+By default `fdbm` will look in `./db/fdb.cluster` for a FoundationDB cluster 
+file. 
 
-# Usage
+Alternatively, you can pass in the cluster file location with 
+`-f <path/to/file.name>` when calling `fdbm`.
 
-goose provides several commands to help manage your database schema.
+For example:
 
-## create
+`fdbm -f /conf/fdb.cluster up`
 
-Create a new Go migration.
 
-    $ goose create AddSomeColumns
-    $ goose: created db/migrations/20130106093224_AddSomeColumns.go
+### FDB Version
 
-Edit the newly created script to define the behavior of your migration.
+The fdb client requires you to define the API version. By default, we use `510`.
+To specify a version, add it as a comment to `fdb.cluster` as defined above or
+you can pass in the fdb version with `-v <version>` when calling `fdbm`. 
 
-You can also create an SQL migration:
+For example:
 
-    $ goose create AddSomeColumns sql
-    $ goose: created db/migrations/20130106093224_AddSomeColumns.sql
+`fdbm -v 510 up`
 
-## up
 
-Apply all available migrations.
+### Migration files location
 
-    $ goose up
-    $ goose: migrating db environment 'development', current version: 0, target: 3
-    $ OK    001_basics.sql
-    $ OK    002_next.sql
-    $ OK    003_and_again.go
+By default, `fdbm` will look in `./db/migrations` for migrations. To specify a
+different directory when calling `fdbm` use `-m </path/to/migrations>`.
 
-### option: pgschema
+For example:
 
-Use the `pgschema` flag with the `up` command specify a postgres schema.
+`fdbm -m /configs/database/migrations up`
 
-    $ goose -pgschema=my_schema_name up
-    $ goose: migrating db environment 'development', current version: 0, target: 3
-    $ OK    001_basics.sql
-    $ OK    002_next.sql
-    $ OK    003_and_again.go
 
-## down
+## Usage
 
-Roll back a single migration from the current version.
+### Creating migrations
 
-    $ goose down
-    $ goose: migrating db environment 'development', current version: 3, target: 2
-    $ OK    003_and_again.go
+You should create migrations using the `fdbm` command so they contain all the
+necessary features and take advantage of new features. Do not copy/paste old
+migration file contents.
 
-## redo
+`fdbm create <migration_name>`
 
-Roll back the most recently applied migration, then run it again.
+After creation, you need to edit the contents to actually do something.
 
-    $ goose redo
-    $ goose: migrating db environment 'development', current version: 3, target: 2
-    $ OK    003_and_again.go
-    $ goose: migrating db environment 'development', current version: 2, target: 3
-    $ OK    003_and_again.go
+#### Embedded migrations
 
-## status
+Feel free to import `github.com/dkoston/fdbm/lib/fdbm` into your applications
+and use the public APIs.
 
-Print the status of all migrations:
+### Running migrations
 
-    $ goose status
-    $ goose: status for environment 'development'
+When running migrations, `fdbm` will look at the db/migrations directory and run
+any migrations which have not been previously run.
+
+To do so, run:
+
+`fdbm up`
+
+### Rolling back migrations
+
+WARNING: not every migration can be easily rolled back. If you have changed the
+db and your code, you will have to roll back both your db and the code. Also, 
+the ability to roll back migrations purely depends on your ability to write a 
+migration function that will return data to its previous state. Unlike SQL where
+data is structured, your application may have altered the data in such a way
+that it cannot be rolled back (hopefully not). USE AT YOUR OWN RISK.
+
+`fdbm down`
+
+The above command will rollback the last applied migration. To rollback multiple
+, you will have to run the command multiple times.
+
+
+### Re-running a failed migration
+
+For convience, you can rollback and re-run the last migration with:
+
+`fdbm redo`
+
+### Check the status of migrations
+
+`fdmb status`
+
+    $ fdmb status
+    $ fdmb: status
     $   Applied At                  Migration
     $   =======================================
-    $   Sun Jan  6 11:25:03 2013 -- 001_basics.sql
-    $   Sun Jan  6 11:25:03 2013 -- 002_next.sql
-    $   Pending                  -- 003_and_again.go
-
-## dbversion
-
-Print the current version of the database:
-
-    $ goose dbversion
-    $ goose: dbversion 002
+    $   Tue May  22 11:25:03 2018 -- 001_import_data.go
+    $   Tue May  22 11:25:03 2018 -- 002_add_more_data.go
+    $   Pending                   -- 003_alter_the_data_from_one.go
 
 
-`goose -h` provides more detailed info on each command.
+You will see the timestamp of when applied migrations were run against the db.
+Anything listed as "Pending" has not yet been run.
 
 
-# Migrations
+### Get the last migration number run against the database
 
-goose supports migrations written in SQL or in Go - see the `goose create` command above for details on how to generate them.
+`fdbm dbversion`
 
-## SQL Migrations
+    $ fdbm dbversion
+    $ fdbm: dbversion 003
 
-A sample SQL migration looks like:
+This will print the number of the last migration run. i.e. (003_alter_the_data_from_one.go)
 
-```sql
--- +goose Up
-CREATE TABLE post (
-    id int NOT NULL,
-    title text,
-    body text,
-    PRIMARY KEY(id)
-);
+## Migration file format
 
--- +goose Down
-DROP TABLE post;
-```
+The file should contain 2 functions, one named `XXXX_Up()` and one named 
+`XXXX_Down()` where `XXXX` is the migration number.
 
-Notice the annotations in the comments. Any statements following `-- +goose Up` will be executed as part of a forward migration, and any statements following `-- +goose Down` will be executed as part of a rollback.
+The function named `XXXX_Up()` will be run with `fdbm up` and then function
+named `XXXX_Down()` will be run with `fdbm down`.
 
-By default, SQL statements are delimited by semicolons - in fact, query statements must end with a semicolon to be properly recognized by goose.
+You may have other functions in the file but those are the two that `fdbm` will
+look for an run automatically with `up` and `down`.
 
-More complex statements (PL/pgSQL) that have semicolons within them must be annotated with `-- +goose StatementBegin` and `-- +goose StatementEnd` to be properly recognized. For example:
+### Example migration file
 
-```sql
--- +goose Up
--- +goose StatementBegin
-CREATE OR REPLACE FUNCTION histories_partition_creation( DATE, DATE )
-returns void AS $$
-DECLARE
-  create_query text;
-BEGIN
-  FOR create_query IN SELECT
-      'CREATE TABLE IF NOT EXISTS histories_'
-      || TO_CHAR( d, 'YYYY_MM' )
-      || ' ( CHECK( created_at >= timestamp '''
-      || TO_CHAR( d, 'YYYY-MM-DD 00:00:00' )
-      || ''' AND created_at < timestamp '''
-      || TO_CHAR( d + INTERVAL '1 month', 'YYYY-MM-DD 00:00:00' )
-      || ''' ) ) inherits ( histories );'
-    FROM generate_series( $1, $2, '1 month' ) AS d
-  LOOP
-    EXECUTE create_query;
-  END LOOP;  -- LOOP END
-END;         -- FUNCTION END
-$$
-language plpgsql;
--- +goose StatementEnd
-```
-
-### Running migrations without transactions (not supported for Go migrations)
-
-By default, all migrations are run within a transaction. Though, some statements like `CREATE DATABASE` cannot be run within a transaction. To skip transactions, add a comment at the top of your migration file that looks like `-- NO TRANSACTIONS --`. In this case, migrations within this file (Up and Down) will by run without any wrapping transaction.
-
-
-## Go Migrations
-
-A sample Go migration looks like:
+The following file will set a key/value pair to `hello: world` on `fdbm up` and 
+then removethat key/value pair on `fdbm down`:
 
 ```go
 package main
 
 import (
-    "database/sql"
-    "fmt"
+    "github.com/apple/foundationdb/bindings/go/src/fdb"
 )
 
-func Up_20130106222315(txn *sql.Tx) {
-    fmt.Println("Hello from migration 20130106222315 Up!")
+
+func Up_20130106222315(t fdb.Transactor) error {
+    _, err := t.Transact(func (tr fdb.Transaction) (ret interface{}, err error) {
+        tr.Set(fdb.Key("hello"), []byte("world"))
+        return
+    })
+
+    return err
 }
 
-func Down_20130106222315(txn *sql.Tx) {
-    fmt.Println("Hello from migration 20130106222315 Down!")
+func Down_20130106222315(t fdb.Transactor) error {
+    _, err := t.Transact(func (tr fdb.Transaction) (ret interface{}, err error) {
+        tr.Clear(fdb.Key("hello"))
+        return
+    })
+
+    return err
 }
 ```
 
-`Up_20130106222315()` will be executed as part of a forward migration, and `Down_20130106222315()` will be executed as part of a rollback.
 
-The numeric portion of the function name (`20130106222315`) must be the leading portion of migration's filename, such as `20130106222315_descriptive_name.go`. `goose create` does this by default.
-
-A transaction is provided, rather than the DB instance directly, since goose also needs to record the schema version within the same transaction. Each migration should run as a single transaction to ensure DB integrity, so it's good practice anyway.
-
-
-# Configuration
-
-goose expects you to maintain a folder (typically called "db"), which contains the following:
-
-* a `dbconf.yml` file that describes the database configurations you'd like to use
-* a folder called "migrations" which contains `.sql` and/or `.go` scripts that implement your migrations
-
-You may use the `-path` option to specify an alternate location for the folder containing your config and migrations.
-
-A sample `dbconf.yml` looks like
-
-```yml
-development:
-    driver: postgres
-    open: user=liam dbname=tester sslmode=disable
-```
-
-Here, `development` specifies the name of the environment, and the `driver` and `open` elements are passed directly to database/sql to access the specified database.
-
-You may include as many environments as you like, and you can use the `-env` command line option to specify which one to use. goose defaults to using an environment called `development`.
-
-goose will expand environment variables in the `open` element. For an example, see the Heroku section below.
-
-## Other Drivers
-goose knows about some common SQL drivers, but it can still be used to run Go-based migrations with any driver supported by `database/sql`. An import path and known dialect are required.
-
-Currently, available dialects are: "postgres", "mysql", or "sqlite3"
-
-To run Go-based migrations with another driver, specify its import path and dialect, as shown below.
-
-```yml
-customdriver:
-    driver: custom
-    open: custom open string
-    import: github.com/custom/driver
-    dialect: mysql
-```
-
-NOTE: Because migrations written in SQL are executed directly by the goose binary, only drivers compiled into goose may be used for these migrations.
-
-## Using goose with Heroku
-
-These instructions assume that you're using [Keith Rarick's Heroku Go buildpack](https://github.com/kr/heroku-buildpack-go). First, add a file to your project called (e.g.) `install_goose.go` to trigger building of the goose executable during deployment, with these contents:
-
-```go
-// use build constraints to work around http://code.google.com/p/go/issues/detail?id=4210
-// +build heroku
-
-// note: need at least one blank line after build constraint
-package main
-
-import _ "bitbucket.org/liamstask/goose/cmd/goose"
-```
-
-[Set up your Heroku database(s) as usual.](https://devcenter.heroku.com/articles/heroku-postgresql)
-
-Then make use of environment variable expansion in your `dbconf.yml`:
-
-```yml
-production:
-    driver: postgres
-    open: $DATABASE_URL
-```
-
-To run goose in production, use `heroku run`:
-
-    heroku run goose -env production up
 
 # Contributors
 
 Thank you!
 
-* Josh Bleecher Snyder (josharian)
-* Abigail Walthall (ghthor)
-* Daniel Heath (danielrheath)
-* Chris Baynes (chris_baynes)
-* Michael Gerow (gerow)
-* Vytautas Šaltenis (rtfb)
-* James Cooper (coopernurse)
-* Gyepi Sam (gyepisam)
-* Matt Sherman (clipperhouse)
-* runner_mei
-* John Luebs (jkl1337)
-* Luke Hutton (lukehutton)
-* Kevin Gorjan (kevingorjan)
-* Brendan Fosberry (Fozz)
-* Nate Guerin (gusennan)
+* Dave Koston (dkoston)

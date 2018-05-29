@@ -1,8 +1,7 @@
-package goose
+package fdbm
 
 import (
 	"bytes"
-	"encoding/gob"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -10,21 +9,15 @@ import (
 	"os/exec"
 	"path/filepath"
 	"text/template"
+	"encoding/gob"
 )
 
 type templateData struct {
-	Version    int64
-	Import     string
+	Number     int64
+	Name       string
 	Conf       string // gob encoded DBConf
-	Direction  bool
+	Status     int64
 	Func       string
-	InsertStmt string
-}
-
-func init() {
-	gob.Register(PostgresDialect{})
-	gob.Register(MySqlDialect{})
-	gob.Register(Sqlite3Dialect{})
 }
 
 //
@@ -34,10 +27,10 @@ func init() {
 // original .go migration, and execute it via `go run` along
 // with a main() of our own creation.
 //
-func runGoMigration(conf *DBConf, path string, version int64, direction bool, tablePrefix string) error {
+func runGoMigration(conf *DBConf, path string, number int64, direction bool) error {
 
 	// everything gets written to a temp dir, and zapped afterwards
-	d, e := ioutil.TempDir("", "goose")
+	d, e := ioutil.TempDir("", "fdbm")
 	if e != nil {
 		log.Fatal(e)
 	}
@@ -47,6 +40,13 @@ func runGoMigration(conf *DBConf, path string, version int64, direction bool, ta
 	if direction {
 		directionStr = "Up"
 	}
+
+	status := STATUS_SUCCESS
+
+	if !direction {
+	    status = STATUS_ROLLEDBACK
+    }
+
 
 	var bb bytes.Buffer
 	if err := gob.NewEncoder(&bb).Encode(conf); err != nil {
@@ -64,14 +64,13 @@ func runGoMigration(conf *DBConf, path string, version int64, direction bool, ta
 	sb.WriteString("}")
 
 	td := &templateData{
-		Version:    version,
-		Import:     conf.Driver.Import,
+		Number:    	number,
+		Name:       path,
 		Conf:       sb.String(),
-		Direction:  direction,
-		Func:       fmt.Sprintf("%v_%v", directionStr, version),
-		InsertStmt: conf.Driver.Dialect.insertVersionSql(tablePrefix),
+		Status:     status,
+		Func:       fmt.Sprintf("%v_%v", directionStr, number),
 	}
-	main, e := writeTemplateToFile(filepath.Join(d, "goose_main.go"), goMigrationDriverTemplate, td)
+	main, e := writeTemplateToFile(filepath.Join(d, "fdbm_main.go"), goMigrationDriverTemplate, td)
 	if e != nil {
 		log.Fatal(e)
 	}
@@ -103,35 +102,38 @@ import (
 	"log"
 	"bytes"
 	"encoding/gob"
+    "time"
 
-	_ "{{.Import}}"
-	"git.help.com/goose/goose"
+	"github.com/dkoston/foundationdb-migrations/lib/fdbm"
 )
 
 func main() {
 
-	var conf goose.DBConf
+	var conf fdbm.DBConf
 	buf := bytes.NewBuffer({{ .Conf }})
 	if err := gob.NewDecoder(buf).Decode(&conf); err != nil {
 		log.Fatal("gob.Decode - ", err)
 	}
 
-	db, err := goose.OpenDBFromDBConf(&conf)
+	db, err := fdbm.OpenDBFromDBConf(&conf)
 	if err != nil {
 		log.Fatal("failed to open DB:", err)
 	}
-	defer db.Close()
 
-	txn, err := db.Begin()
-	if err != nil {
-		log.Fatal("db.Begin:", err)
-	}
+    migrationsSS := fdbm.GetSubspace(db)
 
-	{{ .Func }}(txn)
+	err = {{ .Func }}(db)
+    if err != nil {
+        log.Fatal("Migration Failed: %v", err)
+    }
 
-	err = goose.FinalizeMigration(&conf, txn, {{ .Direction }}, {{ .Version }})
-	if err != nil {
-		log.Fatal("Commit() failed:", err)
-	}
+    date := fdbm.FormatTime(time.Now())
+    name := "{{ .Name }}"
+    status := int64({{ .Status }})
+
+    err = fdbm.FinalizeMigration(db, migrationsSS, date, name, {{ .Number }}, status)
+    if err != nil {
+        log.Fatal("Failed to record version in database:", err)
+    }
 }
 `))

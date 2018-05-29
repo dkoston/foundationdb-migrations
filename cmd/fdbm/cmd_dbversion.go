@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/cryptowalkio/goose/lib/goose"
+	"github.com/dkoston/foundationdb-migrations/lib/fdbm"
 	"fmt"
 	"log"
 )
@@ -15,20 +15,25 @@ var dbVersionCmd = &Command{
 }
 
 func dbVersionRun(cmd *Command, args ...string) {
-	tablePrefix := "goose"
-
-	if len(args) >= 1 {
-		tablePrefix = args[0]
-	}
-
 	conf, err := dbConfFromFlags()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	current, err := goose.GetDBVersion(conf, tablePrefix)
+	db, e := fdbm.OpenDBFromDBConf(conf)
+	if e != nil {
+		log.Fatal("couldn't open DB:", e)
+	}
+
+	migrationsSS := fdbm.GetSubspace(db)
+
+	current, err := fdbm.GetDBVersion(db, migrationsSS)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if current == 000 {
+		log.Fatal("no migrations applied. Use 'goose up' to apply migration files")
 	}
 
 	fmt.Printf("goose: dbversion %v\n", current)

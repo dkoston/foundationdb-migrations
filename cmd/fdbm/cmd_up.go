@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/cryptowalkio/goose/lib/goose"
+	"github.com/dkoston/foundationdb-migrations/lib/fdbm"
 	"log"
 )
 
@@ -14,23 +14,17 @@ var upCmd = &Command{
 }
 
 func upRun(cmd *Command, args ...string) {
-	tablePrefix := "goose"
-
-	if len(args) >= 1 {
-		tablePrefix = args[0]
-	}
-
 	conf, err := dbConfFromFlags()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	target, err := goose.GetMostRecentDBVersion(conf.MigrationsDir)
+	target, err := fdbm.GetMostRecentDBVersion(conf.MigrationsDir)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if err := goose.RunMigrations(conf, conf.MigrationsDir, target, tablePrefix); err != nil {
+	if err := fdbm.RunMigrations(conf, conf.MigrationsDir, target); err != nil {
 		log.Fatal(err)
 	}
 }

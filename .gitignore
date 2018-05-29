@@ -1,5 +1,5 @@
 .DS_Store
-cmd/goose/goose*
+cmd/fdbm/fdbm*
 *.swp
 *.test
 *.iml

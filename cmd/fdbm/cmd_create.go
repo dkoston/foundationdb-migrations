@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/cryptowalkio/goose/lib/goose"
+	"github.com/dkoston/foundationdb-migrations/lib/fdbm"
 	"fmt"
 	"log"
 	"os"
@@ -11,21 +11,16 @@ import (
 
 var createCmd = &Command{
 	Name:    "create",
-	Usage:   "create [name] [type]",
+	Usage:   "create <name>",
 	Summary: "Create the scaffolding for a new migration",
-	Help:    `type is either go, js, or sql`,
+	Help:    `Date based versions will be added automatically, i.e. 20180711_<name>`,
 	Run:     createRun,
 }
 
 func createRun(cmd *Command, args ...string) {
 
 	if len(args) < 1 {
-		log.Fatal("goose create: migration name required")
-	}
-
-	migrationType := "sql" // default to SQL migrations
-	if len(args) >= 2 {
-		migrationType = args[1]
+		log.Fatal("fdbm create: migration name required")
 	}
 
 	conf, err := dbConfFromFlags()
@@ -37,7 +32,7 @@ func createRun(cmd *Command, args ...string) {
 		log.Fatal(err)
 	}
 
-	n, err := goose.CreateMigration(args[0], migrationType, conf.MigrationsDir, time.Now())
+	n, err := fdbm.CreateMigration(args[0], conf.MigrationsDir, time.Now())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -47,5 +42,5 @@ func createRun(cmd *Command, args ...string) {
 		log.Fatal(e)
 	}
 
-	fmt.Println("goose: created", a)
+	fmt.Println("fdbm create: migration created", a)
 }

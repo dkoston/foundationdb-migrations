@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/cryptowalkio/goose/lib/goose"
+	"github.com/dkoston/foundationdb-migrations/lib/fdbm"
 	"flag"
 	"fmt"
 	"os"
@@ -10,13 +10,13 @@ import (
 )
 
 // global options. available to any subcommands.
-var flagPath = flag.String("path", "db", "folder containing db info")
-var flagEnv = flag.String("env", "development", "which DB environment to use")
-var flagPgSchema = flag.String("pgschema", "", "which postgres-schema to migrate (default = none)")
+var migrationsDir = flag.String("m", "db/migrations", "folder containing your migrations (default = ./db/migrations)")
+var clusterFile = flag.String("f", "db/fdb.cluster", "path to your FoundationDB cluster file (default = ./db/fdb.cluster)")
+var fdbVersion = flag.Int("v", 510, "Version of the FoundationDB Cluster API (default = 510)")
 
 // helper to create a DBConf from the given flags
-func dbConfFromFlags() (dbconf *goose.DBConf, err error) {
-	return goose.NewDBConf(*flagPath, *flagEnv, *flagPgSchema)
+func dbConfFromFlags() (dbconf *fdbm.DBConf, err error) {
+	return fdbm.NewDBConf(*migrationsDir, *clusterFile, *fdbVersion)
 }
 
 var commands = []*Command{
@@ -64,10 +64,10 @@ func usage() {
 }
 
 var usagePrefix = `
-goose is a database migration management system for Go projects.
+fdbm is a database migration tool for FoundationDB (https://github.com/apple/foundationdb).
 
 Usage:
-    goose [options] <subcommand> [subcommand options]
+    fdbm [options] <subcommand> [subcommand options]
 
 Options:
 `

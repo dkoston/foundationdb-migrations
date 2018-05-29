@@ -1,4 +1,4 @@
-package goose
+package fdbm
 
 import (
 	"os"
