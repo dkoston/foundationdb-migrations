@@ -1,5 +1,6 @@
 .DS_Store
 cmd/fdbm/fdbm*
+db/migrations/*
 *.swp
 *.test
 *.iml
