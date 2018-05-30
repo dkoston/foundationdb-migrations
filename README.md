@@ -42,7 +42,7 @@ clone this repo into $GOPATH/github.com/dkoston/foundationdb-migrations and run:
 
 1. To build: `docker build -t fdbm .`    
 2. To use: `docker run --name fdbm -it fdbm bash; fdbm`
-3. To copy to local drive (while step 2 is running): `docker cp fdbm:/src/github.com/dkoston/foundationdb-migrations/lib/fdbm/fdbm .`
+3. To copy to local drive (while step 2 is running): `docker cp fdbm:/go/src/github.com/dkoston/foundationdb-migrations/cmd/fdbm/fdbm .`
 
 ## Configuration and command line options (all commands under Usage)
 
