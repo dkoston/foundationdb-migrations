@@ -9,10 +9,10 @@ func TestMigrationMapSortUp(t *testing.T) {
 	ms := migrationSorter{}
 
 	// insert in any order
-	ms = append(ms, newMigration(20120000, "test"))
-	ms = append(ms, newMigration(20128000, "test"))
-	ms = append(ms, newMigration(20129000, "test"))
-	ms = append(ms, newMigration(20127000, "test"))
+	ms = append(ms, newMigration(20120000, "test", "./20120000_testing1.go"))
+	ms = append(ms, newMigration(20128000, "test", "./20128000_testing8.go"))
+	ms = append(ms, newMigration(20129000, "test", "./20129000_testing9.go"))
+	ms = append(ms, newMigration(20127000, "test", "./20127000_testing7.go"))
 
 	ms.Sort(true) // sort Upwards
 
@@ -26,10 +26,10 @@ func TestMigrationMapSortDown(t *testing.T) {
 	ms := migrationSorter{}
 
 	// insert in any order
-	ms = append(ms, newMigration(20120000, "test"))
-	ms = append(ms, newMigration(20128000, "test"))
-	ms = append(ms, newMigration(20129000, "test"))
-	ms = append(ms, newMigration(20127000, "test"))
+	ms = append(ms, newMigration(20120000, "test", "./20120000_testing1.go"))
+	ms = append(ms, newMigration(20128000, "test", "./20128000_testing8.go"))
+	ms = append(ms, newMigration(20129000, "test", "./20129000_testing9.go"))
+	ms = append(ms, newMigration(20127000, "test", "./20127000_testing7.go"))
 
 	ms.Sort(false) // sort Downwards
 
@@ -41,21 +41,21 @@ func TestMigrationMapSortDown(t *testing.T) {
 func validateMigrationSort(t *testing.T, ms migrationSorter, sorted []int64) {
 
 	for i, m := range ms {
-		if sorted[i] != m.Version {
-			t.Error("incorrect sorted version")
+		if sorted[i] != m.Number {
+			t.Error("incorrect sorted number")
 		}
 
 		var next, prev int64
 
 		if i == 0 {
 			prev = -1
-			next = ms[i+1].Version
+			next = ms[i+1].Number
 		} else if i == len(ms)-1 {
-			prev = ms[i-1].Version
+			prev = ms[i-1].Number
 			next = -1
 		} else {
-			prev = ms[i-1].Version
-			next = ms[i+1].Version
+			prev = ms[i-1].Number
+			next = ms[i+1].Number
 		}
 
 		if m.Next != next {
